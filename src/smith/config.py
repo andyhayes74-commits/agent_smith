@@ -47,6 +47,35 @@ class Settings(BaseSettings):
 
     database_url: str | None = None
 
+    smith_schema_profile: str = "generic"
+
+    smith_jobs_table: str = "jobs"
+    smith_errors_table: str = "errors"
+    smith_approvals_table: str = "approvals"
+
+    smith_jobs_id_column: str = "id"
+    smith_jobs_status_column: str = "status"
+    smith_jobs_created_at_column: str = "created_at"
+    smith_jobs_updated_at_column: str | None = "updated_at"
+    smith_jobs_title_column: str | None = None
+    smith_jobs_client_id_column: str | None = None
+    smith_jobs_workflow_run_id_column: str | None = None
+
+    smith_errors_id_column: str = "id"
+    smith_errors_job_id_column: str | None = None
+    smith_errors_tool_id_column: str | None = None
+    smith_errors_created_at_column: str = "created_at"
+    smith_errors_message_column: str = "message"
+    smith_errors_severity_column: str | None = None
+    smith_errors_raw_payload_column: str | None = None
+
+    smith_approvals_id_column: str = "id"
+    smith_approvals_job_id_column: str | None = None
+    smith_approvals_status_column: str = "status"
+    smith_approvals_approval_type_column: str | None = None
+    smith_approvals_created_at_column: str = "created_at"
+    smith_approvals_requested_by_column: str | None = None
+
     n8n_base_url: str | None = None
     n8n_api_key: str | None = None
 

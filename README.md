@@ -131,7 +131,9 @@ curl http://localhost:8000/health
 curl http://localhost:8000/status
 ```
 
-Read-only supervisor endpoints backed by Postgres when `DATABASE_URL` is configured:
+Read-only supervisor endpoints backed by Postgres when `DATABASE_URL` is configured.
+Smith maps generic supervisor concepts (`jobs`, `errors`, and `approvals`) to the
+supervised system schema through a read-only schema adapter:
 
 ```bash
 curl http://localhost:8000/jobs
@@ -142,7 +144,26 @@ curl http://localhost:8000/approvals/pending
 ```
 
 If Postgres is not configured or unavailable, supervisor endpoints return `503` with a
-clear `postgres_unavailable` error instead of preventing Smith from booting.
+clear `postgres_unavailable` error instead of preventing Smith from booting. Invalid
+schema adapter settings are also reported safely and are never interpolated into SQL.
+
+The generic defaults are `jobs`, `errors`, and `approvals`. Smith only observes these
+tables; it does not migrate, create, alter, insert, update, or delete records in the
+supervised database. Optional column settings can be left blank and will be omitted
+from supervisor responses. Example custom mapping, not a confirmed production schema:
+
+```text
+SMITH_SCHEMA_PROFILE=example_n8n_monitor
+SMITH_JOBS_TABLE=workflow_jobs
+SMITH_JOBS_ID_COLUMN=job_uuid
+SMITH_JOBS_STATUS_COLUMN=state
+SMITH_JOBS_CREATED_AT_COLUMN=created_on
+SMITH_JOBS_UPDATED_AT_COLUMN=last_seen_at
+SMITH_ERRORS_TABLE=runtime_errors
+SMITH_ERRORS_MESSAGE_COLUMN=error_text
+SMITH_APPROVALS_TABLE=review_requests
+SMITH_APPROVALS_STATUS_COLUMN=review_state
+```
 
 Run tests:
 
@@ -161,6 +182,10 @@ Important: `.env` must not be committed.
 ```text
 SMITH_ENV=development
 DATABASE_URL=postgres://...
+SMITH_SCHEMA_PROFILE=generic
+SMITH_JOBS_TABLE=jobs
+SMITH_ERRORS_TABLE=errors
+SMITH_APPROVALS_TABLE=approvals
 N8N_BASE_URL=http://n8n:5678
 N8N_API_KEY=...
 TELEGRAM_BOT_TOKEN=...

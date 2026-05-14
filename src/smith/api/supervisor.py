@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from smith.adapters.schema import SchemaAdapterConfigurationError, SupervisorSchemaAdapter
 from smith.config import get_settings
 from smith.connectors.postgres import PostgresConnector, PostgresUnavailableError
 from smith.core.supervisor import SupervisorListResponse, SupervisorReadService
@@ -16,7 +17,10 @@ StaleMinutesQuery = Annotated[int, Query(ge=1, le=10080)]
 
 def get_supervisor_read_service() -> SupervisorReadService:
     settings = get_settings()
-    return SupervisorReadService(PostgresConnector(database_url=settings.database_url))
+    return SupervisorReadService(
+        PostgresConnector(database_url=settings.database_url),
+        SupervisorSchemaAdapter.from_settings(settings),
+    )
 
 
 SupervisorServiceDependency = Annotated[
@@ -36,6 +40,14 @@ async def _run_supervisor_read(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
                 "error": "postgres_unavailable",
+                "message": str(exc),
+            },
+        ) from exc
+    except SchemaAdapterConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "schema_adapter_invalid",
                 "message": str(exc),
             },
         ) from exc

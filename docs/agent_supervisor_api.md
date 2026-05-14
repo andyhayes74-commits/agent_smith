@@ -34,7 +34,6 @@ Agent layer must not:
 
 ---
 
-
 ## Smith v1 Read-only Supervisor Endpoints
 
 Smith v1 exposes read-only HTTP status views backed by Postgres when `DATABASE_URL`
@@ -48,9 +47,38 @@ is configured:
 | `GET /errors/recent` | List recent error records. |
 | `GET /approvals/pending` | List approval records awaiting human review. |
 
-These endpoints do not trigger n8n actions and do not mutate database state. If
-Postgres is not configured or unavailable, they return `503` with a
-`postgres_unavailable` detail payload.
+These endpoints do not trigger n8n actions and do not mutate database state. They
+read through Smith's schema adapter, which maps generic supervisor concepts to the
+actual table and column names of the supervised system. If Postgres is not configured
+or unavailable, they return `503` with a `postgres_unavailable` detail payload. If
+the schema adapter configuration is invalid, they return a safe `503` with a
+`schema_adapter_invalid` detail payload rather than executing SQL.
+
+Generic defaults:
+
+```text
+SMITH_SCHEMA_PROFILE=generic
+SMITH_JOBS_TABLE=jobs
+SMITH_ERRORS_TABLE=errors
+SMITH_APPROVALS_TABLE=approvals
+```
+
+Example custom mapping only, not a confirmed live AI Content schema:
+
+```text
+SMITH_SCHEMA_PROFILE=example_monitor
+SMITH_JOBS_TABLE=workflow_jobs
+SMITH_JOBS_ID_COLUMN=job_uuid
+SMITH_JOBS_STATUS_COLUMN=state
+SMITH_JOBS_CREATED_AT_COLUMN=created_on
+SMITH_JOBS_UPDATED_AT_COLUMN=last_seen_at
+SMITH_ERRORS_TABLE=runtime_errors
+SMITH_ERRORS_MESSAGE_COLUMN=error_text
+SMITH_APPROVALS_TABLE=review_requests
+SMITH_APPROVALS_STATUS_COLUMN=review_state
+```
+
+Smith does not migrate, alter, or otherwise own supervised databases.
 
 ---
 
