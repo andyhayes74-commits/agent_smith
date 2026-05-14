@@ -134,3 +134,17 @@ def test_postgres_connector_blocks_mutating_queries() -> None:
 
     with pytest.raises(UnsafeReadOnlyQueryError):
         connector._validate_read_only_query("DELETE FROM jobs WHERE id = 1")
+
+
+def test_supervisor_endpoint_returns_503_for_malformed_postgres_url(monkeypatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "not-a-valid-dsn")
+    get_settings.cache_clear()
+    client = TestClient(create_app())
+
+    response = client.get("/jobs")
+
+    assert response.status_code == 503
+    payload = response.json()
+    assert payload["detail"]["error"] == "postgres_unavailable"
+    assert payload["detail"]["message"] == "Postgres is unavailable or misconfigured."
+    assert "not-a-valid-dsn" not in payload["detail"]["message"]

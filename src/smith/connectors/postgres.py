@@ -57,10 +57,14 @@ class PostgresConnector:
             )
             async with connection.transaction(readonly=True):
                 records = await connection.fetch(query, *args)
-        except asyncpg.PostgresError as exc:
-            raise PostgresUnavailableError("Postgres read request failed.") from exc
-        except OSError as exc:
-            raise PostgresUnavailableError("Postgres is unavailable.") from exc
+        except (
+            asyncpg.ClientConfigurationError,
+            asyncpg.InterfaceError,
+            asyncpg.PostgresError,
+            OSError,
+            ValueError,
+        ) as exc:
+            raise PostgresUnavailableError("Postgres is unavailable or misconfigured.") from exc
         finally:
             if connection is not None:
                 await connection.close()

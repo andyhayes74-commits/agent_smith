@@ -1,5 +1,9 @@
+import anyio
+import asyncpg
+import pytest
+
 from smith.connectors.n8n import N8nConnector
-from smith.connectors.postgres import PostgresConnector
+from smith.connectors.postgres import PostgresConnector, PostgresUnavailableError
 from smith.connectors.telegram import TelegramConnector
 
 
@@ -21,3 +25,39 @@ def test_telegram_unknown_users_are_rejected() -> None:
     assert connector.is_allowed_user("456") is True
     assert connector.is_allowed_user(789) is False
     assert connector.is_allowed_user("not-a-number") is False
+
+
+def test_postgres_connector_converts_malformed_dsn_errors(monkeypatch) -> None:
+    async def raise_client_configuration_error(*args: object, **kwargs: object) -> None:
+        raise asyncpg.ClientConfigurationError("invalid DSN contains secret")
+
+    monkeypatch.setattr(asyncpg, "connect", raise_client_configuration_error)
+    connector = PostgresConnector(database_url="postgres://user:secret@example/db")
+
+    with pytest.raises(PostgresUnavailableError) as exc_info:
+        anyio.run(connector.fetch, "SELECT id FROM jobs LIMIT 1")
+
+    assert str(exc_info.value) == "Postgres is unavailable or misconfigured."
+    assert "secret" not in str(exc_info.value)
+
+
+def test_postgres_connector_converts_interface_errors(monkeypatch) -> None:
+    async def raise_interface_error(*args: object, **kwargs: object) -> None:
+        raise asyncpg.InterfaceError("invalid connection state")
+
+    monkeypatch.setattr(asyncpg, "connect", raise_interface_error)
+    connector = PostgresConnector(database_url="postgres://example")
+
+    with pytest.raises(PostgresUnavailableError):
+        anyio.run(connector.fetch, "SELECT id FROM jobs LIMIT 1")
+
+
+def test_postgres_connector_converts_value_errors(monkeypatch) -> None:
+    async def raise_value_error(*args: object, **kwargs: object) -> None:
+        raise ValueError("malformed database URL")
+
+    monkeypatch.setattr(asyncpg, "connect", raise_value_error)
+    connector = PostgresConnector(database_url="not-a-valid-dsn")
+
+    with pytest.raises(PostgresUnavailableError):
+        anyio.run(connector.fetch, "SELECT id FROM jobs LIMIT 1")
