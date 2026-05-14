@@ -12,4 +12,4 @@ class PostgresConnector:
     database_url: str | None
 
     def is_configured(self) -> bool:
-        return bool(self.database_url)
+        return bool(self.database_url and self.database_url.strip())

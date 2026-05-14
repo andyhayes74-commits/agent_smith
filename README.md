@@ -124,10 +124,11 @@ pip install -e ".[dev]"
 uvicorn smith.main:app --reload
 ```
 
-Health check:
+Health and deterministic configuration status checks:
 
 ```bash
 curl http://localhost:8000/health
+curl http://localhost:8000/status
 ```
 
 Run tests:
