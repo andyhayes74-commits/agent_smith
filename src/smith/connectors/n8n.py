@@ -13,4 +13,6 @@ class N8nConnector:
     api_key: str | None
 
     def is_configured(self) -> bool:
-        return bool(self.base_url and self.api_key)
+        return bool(
+            self.base_url and self.base_url.strip() and self.api_key and self.api_key.strip()
+        )
