@@ -186,6 +186,10 @@ SMITH_SCHEMA_PROFILE=generic
 SMITH_JOBS_TABLE=jobs
 SMITH_ERRORS_TABLE=errors
 SMITH_APPROVALS_TABLE=approvals
+SMITH_LLM_PROVIDER=openai
+SMITH_LLM_MODEL=gpt-5-mini
+SMITH_ALLOWED_MODELS=gpt-5-mini,gpt-5-nano,gpt-5.5
+SMITH_MODEL_CHANGE_MODE=runtime
 N8N_BASE_URL=http://n8n:5678
 N8N_API_KEY=...
 TELEGRAM_BOT_TOKEN=...
@@ -194,6 +198,28 @@ LLM_PROVIDER=none
 LLM_API_KEY=...
 SMITH_PERMISSION_LEVEL=0
 ```
+
+### Telegram Model Control
+
+Smith v1 includes a Telegram command handler for model visibility and runtime-only
+model overrides. It does not edit `.env`, does not expose API keys, and does not
+restart Smith. Model changes are restricted to `SMITH_ALLOWED_MODELS`, require an
+allowlisted Telegram user, require Smith permission level 1 or higher, and must be
+confirmed with a short expiring code.
+
+Supported commands:
+
+```text
+/model
+/models
+/model set <model_name>
+/model confirm <code>
+/model reset
+```
+
+`/model` and `/models` are read-only commands and can be used at permission level 0
+by allowed Telegram users. Runtime changes are process-local Smith state in v1; they
+are not written to the supervised database or to `.env`.
 
 ---
 

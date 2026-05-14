@@ -39,7 +39,7 @@ Recommendation / response / audit log
 | Core | Deterministic supervisor logic. |
 | Memory | Session, context packet, human thread, and future MemoryCore structures. |
 | Policies | Permission levels and action guardrails. |
-| Telegram | Future direct Telegram command adapter. |
+| Telegram | Direct command handling for allowlisted operator commands. |
 
 ---
 
@@ -62,6 +62,24 @@ expressions, function calls, and dangerous SQL keywords.
 
 Smith does not own the supervised schema. It must not create migrations, create
 tables, alter tables, or write records as part of v1 supervisor reads.
+
+---
+
+## Telegram Model-control Boundary
+
+Smith v1 supports Telegram model-control commands for observing and changing the
+active LLM model at runtime:
+
+- `/model` reports provider, active model, source, and whether LLM access is configured.
+- `/models` lists `SMITH_ALLOWED_MODELS` and marks the active model.
+- `/model set <model_name>` creates a pending runtime-only change for an allowed model.
+- `/model confirm <code>` applies the pending change for the same Telegram user before expiry.
+- `/model reset` clears the runtime override and returns to `SMITH_LLM_MODEL`.
+
+These commands do not expose secrets, rewrite `.env`, call model providers, trigger
+n8n, or mutate supervised databases. Read-only model status commands are available
+at permission level 0. Runtime model changes require permission level 1 or higher
+and write only an in-memory Smith audit event.
 
 ---
 

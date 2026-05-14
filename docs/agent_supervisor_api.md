@@ -92,6 +92,25 @@ Smith should not call mutating endpoints until action permissions, confirmation 
 
 ---
 
+## Telegram Model-control Commands
+
+Smith v1 model-control is command based rather than a write API endpoint. It is
+available only to allowlisted Telegram users. The commands are:
+
+| Command | Purpose | Permission |
+|---|---|---|
+| `/model` | Show provider, active model, source, and LLM configured state. | Level 0 |
+| `/models` | List `SMITH_ALLOWED_MODELS` and mark the current model. | Level 0 |
+| `/model set <model_name>` | Request a pending runtime-only model override. | Level 1+ |
+| `/model confirm <code>` | Confirm the pending override for the requesting user before expiry. | Level 1+ |
+| `/model reset` | Clear the runtime override and return to environment config. | Level 1+ |
+
+Model changes never rewrite `.env`, never edit secrets, never restart Smith, and
+never allow a model outside `SMITH_ALLOWED_MODELS`. Confirmation writes only an
+in-memory Smith audit event in v1.
+
+---
+
 ## Future Action Flow
 
 ```text
