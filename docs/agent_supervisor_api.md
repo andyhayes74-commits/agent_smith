@@ -34,6 +34,26 @@ Agent layer must not:
 
 ---
 
+
+## Smith v1 Read-only Supervisor Endpoints
+
+Smith v1 exposes read-only HTTP status views backed by Postgres when `DATABASE_URL`
+is configured:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /jobs` | List recent jobs. |
+| `GET /jobs/active` | List queued, running, in-progress, or active jobs. |
+| `GET /jobs/stuck` | List active jobs whose latest activity is older than the stale threshold. |
+| `GET /errors/recent` | List recent error records. |
+| `GET /approvals/pending` | List approval records awaiting human review. |
+
+These endpoints do not trigger n8n actions and do not mutate database state. If
+Postgres is not configured or unavailable, they return `503` with a
+`postgres_unavailable` detail payload.
+
+---
+
 ## Smith v1 Interpretation
 
 For Smith v1, this API should be treated as an external system boundary.

@@ -131,6 +131,19 @@ curl http://localhost:8000/health
 curl http://localhost:8000/status
 ```
 
+Read-only supervisor endpoints backed by Postgres when `DATABASE_URL` is configured:
+
+```bash
+curl http://localhost:8000/jobs
+curl http://localhost:8000/jobs/active
+curl http://localhost:8000/jobs/stuck
+curl http://localhost:8000/errors/recent
+curl http://localhost:8000/approvals/pending
+```
+
+If Postgres is not configured or unavailable, supervisor endpoints return `503` with a
+clear `postgres_unavailable` error instead of preventing Smith from booting.
+
 Run tests:
 
 ```bash
