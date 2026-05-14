@@ -131,6 +131,40 @@ curl http://localhost:8000/health
 curl http://localhost:8000/status
 ```
 
+Read-only supervisor endpoints backed by Postgres when `DATABASE_URL` is configured.
+Smith maps generic supervisor concepts (`jobs`, `errors`, and `approvals`) to the
+supervised system schema through a read-only schema adapter:
+
+```bash
+curl http://localhost:8000/jobs
+curl http://localhost:8000/jobs/active
+curl http://localhost:8000/jobs/stuck
+curl http://localhost:8000/errors/recent
+curl http://localhost:8000/approvals/pending
+```
+
+If Postgres is not configured or unavailable, supervisor endpoints return `503` with a
+clear `postgres_unavailable` error instead of preventing Smith from booting. Invalid
+schema adapter settings are also reported safely and are never interpolated into SQL.
+
+The generic defaults are `jobs`, `errors`, and `approvals`. Smith only observes these
+tables; it does not migrate, create, alter, insert, update, or delete records in the
+supervised database. Optional column settings can be left blank and will be omitted
+from supervisor responses. Example custom mapping, not a confirmed production schema:
+
+```text
+SMITH_SCHEMA_PROFILE=example_n8n_monitor
+SMITH_JOBS_TABLE=workflow_jobs
+SMITH_JOBS_ID_COLUMN=job_uuid
+SMITH_JOBS_STATUS_COLUMN=state
+SMITH_JOBS_CREATED_AT_COLUMN=created_on
+SMITH_JOBS_UPDATED_AT_COLUMN=last_seen_at
+SMITH_ERRORS_TABLE=runtime_errors
+SMITH_ERRORS_MESSAGE_COLUMN=error_text
+SMITH_APPROVALS_TABLE=review_requests
+SMITH_APPROVALS_STATUS_COLUMN=review_state
+```
+
 Run tests:
 
 ```bash
@@ -148,6 +182,14 @@ Important: `.env` must not be committed.
 ```text
 SMITH_ENV=development
 DATABASE_URL=postgres://...
+SMITH_SCHEMA_PROFILE=generic
+SMITH_JOBS_TABLE=jobs
+SMITH_ERRORS_TABLE=errors
+SMITH_APPROVALS_TABLE=approvals
+SMITH_LLM_PROVIDER=openai
+SMITH_LLM_MODEL=gpt-5-mini
+SMITH_ALLOWED_MODELS=gpt-5-mini,gpt-5-nano,gpt-5.5
+SMITH_MODEL_CHANGE_MODE=runtime
 N8N_BASE_URL=http://n8n:5678
 N8N_API_KEY=...
 TELEGRAM_BOT_TOKEN=...
@@ -156,6 +198,28 @@ LLM_PROVIDER=none
 LLM_API_KEY=...
 SMITH_PERMISSION_LEVEL=0
 ```
+
+### Telegram Model Control
+
+Smith v1 includes a Telegram command handler for model visibility and runtime-only
+model overrides. It does not edit `.env`, does not expose API keys, and does not
+restart Smith. Model changes are restricted to `SMITH_ALLOWED_MODELS`, require an
+allowlisted Telegram user, require Smith permission level 1 or higher, and must be
+confirmed with a short expiring code.
+
+Supported commands:
+
+```text
+/model
+/models
+/model set <model_name>
+/model confirm <code>
+/model reset
+```
+
+`/model` and `/models` are read-only commands and can be used at permission level 0
+by allowed Telegram users. Runtime changes are process-local Smith state in v1; they
+are not written to the supervised database or to `.env`.
 
 ---
 
