@@ -1,0 +1,15 @@
+services:
+  smith:
+    build: .
+    container_name: agent-smith
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - smith-net
+
+networks:
+  smith-net:
+    name: smith-net
