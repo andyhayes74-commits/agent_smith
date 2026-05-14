@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from smith.api.health import router as health_router
+from smith.api.status import router as status_router
 from smith.config import get_settings
 
 
@@ -15,6 +16,7 @@ def create_app() -> FastAPI:
 
     app.state.settings = settings
     app.include_router(health_router)
+    app.include_router(status_router)
 
     return app
 
